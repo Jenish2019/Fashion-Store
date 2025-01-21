@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from "react"
+import { useParams } from "next/navigation"
 import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -14,19 +15,15 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 
-interface TryOnPageProps {
-  params: {
-    id: string
-  }
-}
-
-const TryOnPage = ({ params }: TryOnPageProps) => {
+const TryOnPage = () => {
+  const params = useParams()
   const [uploadedImage, setUploadedImage] = useState<string | null>(null)
   const [processedImage, setProcessedImage] = useState<string | null>(null)
-  const [selectedProductId, setSelectedProductId] = useState(params.id)
+  const [selectedProductId, setSelectedProductId] = useState(params.id as string)
   
   const currentProduct = products.find(p => p.id === selectedProductId) ?? products[0]
-  const relatedProducts = products.filter(p => p.category === currentProduct.category)
+  const relatedProducts = currentProduct ? 
+    products.filter(p => p.category === currentProduct.category) : []
 
   const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
@@ -42,11 +39,14 @@ const TryOnPage = ({ params }: TryOnPageProps) => {
   const processImage = async () => {
     if (!uploadedImage) return
     try {
-      // API call simulation
       setProcessedImage(uploadedImage)
     } catch (error) {
       console.error("Error processing image:", error)
     }
+  }
+
+  if (!currentProduct) {
+    return <div>Product not found</div>
   }
 
   return (

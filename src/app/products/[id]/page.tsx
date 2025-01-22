@@ -6,6 +6,8 @@ import { useCart } from "@/contexts/CartContext"
 import { Button } from "@/components/ui/button"
 import { useToast } from "@/hooks/use-toast"
 import { products } from "@/data/product"
+import { useEffect, useState } from "react"
+import { Product } from "@/types"
 import { ShoppingCart, Eye } from "lucide-react"
 
 interface ProductPageProps {
@@ -17,14 +19,22 @@ interface ProductPageProps {
 const ProductPage = ({ params }: ProductPageProps) => {
   const { addItem } = useCart()
   const { toast } = useToast()
+  const [product, setProduct] = useState<Product | null>(null)
   
-  const product = products.find(p => p.id === params.id) ?? {
-    id: params.id,
-    name: "Classic T-Shirt",
-    price: 29.99,
-    description: "A comfortable classic t-shirt made from 100% cotton.",
-    imageUrl: "/images/1.jpg",
-    category: "T-Shirts"
+  useEffect(() => {
+    const foundProduct = products.find(p => p.id === params.id)
+    setProduct(foundProduct ?? {
+      id: params.id,
+      name: "Classic T-Shirt",
+      price: 29.99,
+      description: "A comfortable classic t-shirt made from 100% cotton.",
+      imageUrl: "/products/tshirt.jpg",
+      category: "T-Shirts"
+    })
+  }, [params.id])
+
+  if (!product) {
+    return null // or a loading spinner
   }
 
   const handleAddToCart = () => {
@@ -67,7 +77,7 @@ const ProductPage = ({ params }: ProductPageProps) => {
               <ShoppingCart className="mr-2 h-5 w-5" />
               Add to Cart
             </Button>
-            <Link href={`/try-on/${params.id}`} className="flex-1">
+            <Link href={`/try-on/${product.id}`} className="flex-1">
               <Button 
                 variant="outline" 
                 size="lg"

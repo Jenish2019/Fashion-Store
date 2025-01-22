@@ -1,10 +1,11 @@
 'use client'
 
 import Image from "next/image"
-import { Search, ShoppingCart, Menu } from "lucide-react"
+import { Search, ShoppingCart, Menu, UserCircle, LogOut } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { useCart } from "@/contexts/CartContext"
+import { useAuth } from "@/contexts/AuthContext"
 import Link from "next/link"
 import {
   Sheet,
@@ -13,11 +14,18 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 import { useState } from "react"
 import CartItem from "./CartItem"
 
 const Navbar = () => {
   const { items, totalItems, totalPrice } = useCart()
+  const { user, logout } = useAuth()
   const [isSearchOpen, setIsSearchOpen] = useState(false)
 
   return (
@@ -136,6 +144,31 @@ const Navbar = () => {
                 </div>
               </SheetContent>
             </Sheet>
+
+            {user ? (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="icon">
+                    <UserCircle className="h-5 w-5" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem className="font-medium">
+                    {user.name}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={logout}>
+                    <LogOut className="h-4 w-4 mr-2" />
+                    Logout
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ) : (
+              <Link href="/login">
+                <Button variant="ghost" size="sm">
+                  Login
+                </Button>
+              </Link>
+            )}
           </div>
         </div>
       </div>

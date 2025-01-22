@@ -130,7 +130,7 @@ import { NextResponse } from "next/server";
 import { Client } from "@gradio/client";
 
 // Your Hugging Face API Token
-const hfApiToken = "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";
+const hfApiToken = "your_api_here";
 
 export const POST = async (req: any) => {
   console.log("Running POST request: Virtual Try-On");

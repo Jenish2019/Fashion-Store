@@ -1,165 +1,64 @@
-// // import { NextRequest, NextResponse } from "next/server";
-// // import { Client } from "@gradio/client";
-
-// // export const dynamic = "force-dynamic";
-
-// // export const POST = async (request: NextRequest) => {
-// //   console.log("Running POST request: Virtual Try-On");
-
-// //   try {
-// //     const { backgroundUrl, garmentBlob, textParam, denoisingSteps, seed } = await request.json();
-// //     console.log("backgroundUrl:",backgroundUrl)
-// //     console.log("garmentBlob:",garmentBlob)
-// //     console.log("textParam:",textParam)
-// //     console.log("denoisingSteps:",denoisingSteps)
-// //     console.log("seed:",seed)
-
-// //     // Create a client instance using Client.connect
-// //     const app = await Client.connect("Nymbo/Virtual-Try-On");
-
-// //     // Fetch the background image as a blob
-// //     const response = await fetch(backgroundUrl);
-// //     const backgroundBlob = await response.blob();
-
-// //     // Predict using Gradio client
-// //     const result = await app.predict("/tryon", [
-// //       { background: backgroundBlob, layers: [], composite: null },
-// //       garmentBlob,
-// //       textParam,
-// //       true,
-// //       true,
-// //       denoisingSteps,
-// //       seed,
-// //     ]);
-
-// //     return NextResponse.json(result.data, { status: 200 });
-// //   } catch (error) {
-// //     console.error("Error processing virtual try-on:", error);
-// //     return NextResponse.json(
-// //       { error: "Something went wrong" },
-// //       { status: 400 }
-// //     );
-// //   }
-// // };
-
-// // pages/api/virtual-try-on.js
-// import { NextResponse } from "next/server";
-// import { Client } from "@gradio/client";
-
-// export const POST = async (req:any) => {
-//   console.log("Running POST request: Virtual Try-On");
-
-//   try {
-//     const formData = await req.formData(); // Use formData() to retrieve multipart form data
-//     const backgroundFile = formData.get("backgroundImage");
-//     const garmentFile = formData.get("garmentImage");
-//     const textParam = formData.get("textParam");
-//     const denoisingSteps = formData.get("denoisingSteps");
-//     const seed = formData.get("seed");
-
-//     // Convert files to blobs for Gradio client
-//     const backgroundBlob = new Blob([backgroundFile]);
-//     const garmentBlob = new Blob([garmentFile]);
-
-//     const app = await Client.connect("Nymbo/Virtual-Try-On");
-
-//     const result = await app.predict("/tryon", [
-//       { background: backgroundBlob, layers: [], composite: null },
-//       garmentBlob,
-//       textParam,
-//       true,
-//       true,
-//       Number(denoisingSteps),
-//       Number(seed),
-//     ]);
-
-//     return NextResponse.json(result.data);
-//   } catch (error) {
-//     console.error("Error processing virtual try-on:", error);
-//     return NextResponse.json({ error: "Something went wrong" }, { status: 400 });
-//   }
-// };
-
-// import { NextResponse } from "next/server";
-// import { Client } from "@gradio/client";
-
-// export const POST = async (req:any) => {
-//   console.log("Running POST request: Virtual Try-On");
-
-//   try {
-//     // Static URLs for testing
-//     const backgroundUrl = "https://freedesignfile.com/upload/2017/08/Clothing-model-Stock-Photo-03.jpg"; // Replace with a valid static background image URL
-//     const garmentUrl = "https://nymbo-virtual-try-on.hf.space/file=/tmp/gradio/b1dc13cbbad31c37433bcbb7f85c4af4a044dd4f/04469_00.jpg"; // Replace with a valid static garment image URL
-
-//     // Fetch the static files as blobs
-//     const backgroundResponse = await fetch(backgroundUrl);
-//     const backgroundBlob = await backgroundResponse.blob();
-
-//     const garmentResponse = await fetch(garmentUrl);
-//     const garmentBlob = await garmentResponse.blob();
-
-//     // Static values for other parameters
-//     const textParam = "Sample Text";
-//     const denoisingSteps = 20; // Ensure this meets the minimum requirement
-//     const seed = 42;
-
-//     // Connect to the Gradio app
-//     const app = await Client.connect("Nymbo/Virtual-Try-On");
-
-//     // Make the prediction
-//     const result = await app.predict("/tryon", [
-//       { background: backgroundBlob, layers: [], composite: null },
-//       garmentBlob,
-//       textParam,
-//       true,
-//       true,
-//       denoisingSteps,
-//       seed,
-//     ]);
-
-//     console.log("result:",result)
-
-//     return NextResponse.json(result.data);
-//   } catch (error) {
-//     console.error("Error processing virtual try-on:", error);
-//     return NextResponse.json({ error: "Something went wrong" }, { status: 400 });
-//   }
-// };
-
 import { NextResponse } from "next/server";
 import { Client } from "@gradio/client";
+import { promises as fs } from "fs";
+import path from "path";
 
 // Your Hugging Face API Token
-const hfApiToken = "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";
+const HF_API_TOKEN = "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";
 
-export const POST = async (req: any) => {
+// Utility function to create a Blob from a file path
+const filePathToBlob = async (filePath: string): Promise<Blob> => {
+  try {
+    const absolutePath = path.join(process.cwd(), 'public', filePath);
+    const fileBuffer = await fs.readFile(absolutePath);
+    return new Blob([fileBuffer]);
+  } catch (error) {
+    console.error(`Error reading file from path: ${filePath}`, error);
+    throw error;
+  }
+};
+
+// Utility function to fetch and return a Blob from a URL
+const fetchBlob = async (url: string): Promise<Blob> => {
+  try {
+    const response = await fetch(url);
+    if (!response.ok) {
+      throw new Error(`Failed to fetch from URL: ${url}`);
+    }
+    return await response.blob();
+  } catch (error) {
+    console.error(`Error fetching blob from ${url}:`, error);
+    throw error;
+  }
+};
+
+export const POST = async (req: Request): Promise<Response> => {
   console.log("Running POST request: Virtual Try-On");
 
   try {
-    // Static or dynamic inputs
-    const backgroundUrl =
-      "https://th.bing.com/th/id/OIP.yday_vu0kbSvZRp3azfsBwHaLG?rs=1&pid=ImgDetMain";
-    //   "https://freedesignfile.com/upload/2017/08/Clothing-model-Stock-Photo-03.jpg"; // Replace with a valid static background image URL
-    const garmentUrl =
-      "https://nymbo-virtual-try-on.hf.space/file=/tmp/gradio/b1dc13cbbad31c37433bcbb7f85c4af4a044dd4f/04469_00.jpg"; // Replace with a valid static garment image URL
+    const data = await req.json();
 
+    const { backgroundImage, garmentImage } = data;
+    if (!backgroundImage || !garmentImage) {
+      throw new Error("Missing required fields: backgroundImage or garmentImage");
+    }
+
+    // Determine if the input is a URL or file path
+    const backgroundBlob = await fetchBlob(backgroundImage)
+
+    const garmentBlob = await filePathToBlob(garmentImage)
     const textParam = "Sample Text";
     const denoisingSteps = 20;
     const seed = 42;
 
-    const backgroundResponse = await fetch(backgroundUrl);
-    const backgroundBlob = await backgroundResponse.blob();
-
-    const garmentResponse = await fetch(garmentUrl);
-    const garmentBlob = await garmentResponse.blob();
-
-    // Include token in request headers
+    // Connect to the Hugging Face API
     const app = await Client.connect("Nymbo/Virtual-Try-On", {
       headers: {
-        Authorization: `Bearer ${hfApiToken}`,
+        Authorization: `Bearer ${HF_API_TOKEN}`,
       },
     });
 
+    // Call the predict function
     const result = await app.predict("/tryon", [
       { background: backgroundBlob, layers: [], composite: null },
       garmentBlob,
